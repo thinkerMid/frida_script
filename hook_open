@@ -2,6 +2,8 @@
 
 
 
+
+
 function get_self_process_name() {
     var openPtr = Module.getExportByName('libc.so', 'open');
     var open = new NativeFunction(openPtr, 'int', ['pointer', 'int']);
@@ -33,39 +35,28 @@ function get_self_process_name() {
         Interceptor.attach(openPtr, {
             onEnter: function (args) {
                 var data = args[0];
-                Memory.readByteArray(data, 200);
-                console.log("open");
-                console.log(hexdump(data, {
-                offset: 0,
-                length: 200,
-                header: false,
-                ansi: false
-                }));
+                var tt_pathname = Memory.readByteArray(data, 200);
+                var pathnamestr = ptr(data).readCString();
+                console.log("\n");
+                console.log(pathnamestr);
+                if (pathnamestr.indexOf("/proc") == 0) {
+                    //retval.replace(10000);
 
-
-
-                console.log("\\n");
-        console.log("RegisterNatives called from:\\n" + Thread.backtrace(this.context, Backtracer.ACCURATE).map(DebugSymbol.fromAddress).join("\\n") + "\\n");
-        console.log("\\n");
+                    args = null;
+                }
+                console.log("RegisterNatives called from:\n" + Thread.backtrace(this.context, Backtracer.ACCURATE).map(DebugSymbol.fromAddress).join("\n") + "\n");
             },
             onLeave: function (retval) {
-                var data = args[0];
-                var tt_pathname = ptr(data).add(Process.pointerSize).readPointer();
-                var pathnamestr = ptr(tt_pathname).readCString();
-                if (pathnamestr.indexOf("/proc") == 0) {
-                    return  0;
-                }
-                send(retval.toInt32());
                 //retval.replace(10000);
                 console.log(retval.toInt32());
-                console.log("\\n")
-
+                console.log("\n")
             }
         });
     }
     console.log("end")
     return "-1";
 }
+
 
 
 //下面与hook open函数无关 是dump_dex的脚本
